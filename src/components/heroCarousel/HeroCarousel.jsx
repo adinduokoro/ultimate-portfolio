@@ -41,7 +41,7 @@ useGSAP(
             const idx = Math.round(self.progress * (count - 1));
             if (idx !== lastIndexRef.current) {
               lastIndexRef.current = idx;
-              setActiveIndex(idx);
+              // setActiveIndex(idx);
             }
           },
         },
