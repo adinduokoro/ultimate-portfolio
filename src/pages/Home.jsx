@@ -1,9 +1,12 @@
-import React from 'react'
+import React from "react";
+import { HeroCarousel } from "../components";
 
 const Home = () => {
   return (
-    <div>Home</div>
-  )
-}
+    <div>
+      <HeroCarousel />
+    </div>
+  );
+};
 
-export default Home
+export default Home;

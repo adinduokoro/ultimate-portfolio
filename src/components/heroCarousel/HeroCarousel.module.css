@@ -1,0 +1,47 @@
+/* The pinned viewport */
+.container {
+  position: relative;
+  width: 100vw;
+  height: 100svh;            /* better on mobile than 100vh */
+  overflow: hidden;
+}
+
+/* The horizontal track that slides left */
+.track {
+  height: 100%;
+  display: flex;
+  flex-wrap: nowrap;
+  will-change: transform;
+}
+
+/* Each full-screen panel */
+.panel {
+  flex: 0 0 100vw;           /* exactly one viewport width */
+  height: 100svh;            /* exactly one viewport height */
+  display: grid;
+  place-items: center;
+  font-size: clamp(2rem, 6vw, 6rem);
+  font-weight: 800;
+  color: white;
+}
+
+/* Demo colors (replace with your own) */
+.a { background: #111827; }  /* slate-900 */
+.b { background: #1f2937; }  /* gray-800 */
+.c { background: #0ea5e9; }  /* sky-500 */
+.d { background: #16a34a; }  /* green-600 */
+.e { background: #f59e0b; }  /* amber-500 */
+
+/* Current index display */
+/* .hc-indicator {
+  position: absolute;
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%);
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font: 600 0.9rem/1.2 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  pointer-events: none;
+} */
