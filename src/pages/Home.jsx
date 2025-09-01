@@ -4,7 +4,7 @@ import { HeroCanvas } from "../components";
 
 const Home = () => {
   return (
-    <div>
+    <div style={{ height: '100vh', width: '100%', backgroundColor: 'black' }}>
       <HeroCanvas /> {/* working on the 3d animation canvas */}
       {/* <HeroCarousel /> */}
     </div>
