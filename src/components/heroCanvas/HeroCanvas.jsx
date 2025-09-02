@@ -1,15 +1,20 @@
 import React, { useRef } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, useHelper } from "@react-three/drei";
+import { OrbitControls, useHelper, useTexture } from "@react-three/drei";
 import { DirectionalLightHelper, CameraHelper } from "three";
 import { useControls } from "leva";
+
 
 function Scene() {
   const boxRef = useRef();
   const sphereRef = useRef();
   const dirLightRef = useRef();
   const shadowRef = useRef();
+
+  const stars = useTexture("/texture/stars.jpg");
+  stars.colorSpace = THREE.SRGBColorSpace;
+  stars.mapping = THREE.EquirectangularReflectionMapping;
 
   useHelper(dirLightRef, DirectionalLightHelper, 5, "white");
   useHelper(shadowRef, CameraHelper);
@@ -18,7 +23,7 @@ function Scene() {
     sphereColor: { value: "#ffea00" },
     wireframe: { value: false },
     speed: { value: 0.01, min: 0, max: 1, step: 0.001 },
-    far: {value: 100}
+    far: { value: 100 }
   });
 
   let step = 0;
@@ -34,6 +39,9 @@ function Scene() {
 
   return (
     <>
+      {/* ✅ apply scene background */}
+      <primitive attach="background" object={stars} />
+
       <axesHelper args={[5]} />
 
       <mesh ref={boxRef} rotation={[5, 5, 0]}>
