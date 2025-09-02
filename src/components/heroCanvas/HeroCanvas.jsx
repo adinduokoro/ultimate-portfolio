@@ -1,57 +1,86 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef } from "react";
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/Addons.js";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { OrbitControls, useHelper } from "@react-three/drei";
+import { DirectionalLightHelper, CameraHelper } from "three";
+import { useControls } from "leva";
 
-const HeroCanvas = () => {
-  const canvasRef = useRef(null);
+function Scene() {
+  const boxRef = useRef();
+  const sphereRef = useRef();
+  const dirLightRef = useRef();
 
-  useEffect(() => {
-    // === Renderer ===
-    const renderer = new THREE.WebGLRenderer({
-      canvas: canvasRef.current, // React ref instead of appendChild
-      antialias: true,
-    });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  useHelper(dirLightRef, DirectionalLightHelper, 5, "white");
 
-    // === Scene ===
+  const { sphereColor, wireframe, speed } = useControls({
+    sphereColor: { value: "#ffea00" }, 
+    wireframe: { value: false },
+    speed: { value: 0.01, min: 0, max: 1, step: 0.001 },
+  });
 
-    // === Camera ===
-    const camera = new THREE.PerspectiveCamera(
-      45,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
+  let step = 0;
 
-    // === Animate loop ===
-    const animate = () => {
-      requestAnimationFrame(animate);
-    };
-    animate();
+  useFrame((_, delta) => {
+    boxRef.current.rotation.x += 1 * delta;
+    boxRef.current.rotation.y += 1 * delta;
 
-    // === Handle resize ===
-    const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    };
-    window.addEventListener("resize", handleResize);
-
-    // Cleanup
-    // return () => {
-    //   window.removeEventListener("resize", handleResize);
-    //   geometry.dispose();
-    //   material.dispose();
-    //   renderer.dispose();
-    // };
-  }, []);
+    step += speed;
+    sphereRef.current.position.y = 10 * Math.abs(Math.sin(step));
+  });
 
   return (
-    <canvas
-      ref={canvasRef}
-      style={{ width: "100%", height: "100%", display: "block" }}
-    />
+    <>
+      <axesHelper args={[5]} />
+
+      <mesh ref={boxRef} rotation={[5, 5, 0]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshBasicMaterial color="#00ff00" />
+      </mesh>
+
+      <OrbitControls />
+
+      <mesh receiveShadow rotation={[-0.5 * Math.PI, 0, 0]}>
+        <planeGeometry args={[30, 30]} />
+        <meshStandardMaterial color="lightgray" side={THREE.DoubleSide} />
+      </mesh>
+
+      <gridHelper args={[30]} />
+
+      <mesh castShadow ref={sphereRef} position={[-10, 10, 0]}>
+        <sphereGeometry args={[4, 30, 30]} />
+        <meshStandardMaterial color={sphereColor} wireframe={wireframe} />
+      </mesh>
+
+      <ambientLight color={0x333333} intensity={0.3}/>
+      <directionalLight
+      castShadow
+        ref={dirLightRef}
+        color={0xffffff}
+        intensity={0.8}
+        position={[-30, 50, 0]}
+      />
+    </>
+  );
+}
+
+const HeroCanvas = () => {
+  return (
+    <Canvas
+    shadows
+      camera={{
+        fov: 75,
+        near: 0.1,
+        far: 1000,
+        position: [-10, 30, 30],
+      }}
+      style={{
+        width: "100vw",
+        height: "100vh",
+        background: "#000",
+      }}
+    >
+      <Scene />
+    </Canvas>
   );
 };
 
