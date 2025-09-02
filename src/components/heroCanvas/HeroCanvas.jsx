@@ -9,13 +9,16 @@ function Scene() {
   const boxRef = useRef();
   const sphereRef = useRef();
   const dirLightRef = useRef();
+  const shadowRef = useRef();
 
   useHelper(dirLightRef, DirectionalLightHelper, 5, "white");
+  useHelper(shadowRef, CameraHelper);
 
-  const { sphereColor, wireframe, speed } = useControls({
-    sphereColor: { value: "#ffea00" }, 
+  const { sphereColor, wireframe, speed, far } = useControls({
+    sphereColor: { value: "#ffea00" },
     wireframe: { value: false },
     speed: { value: 0.01, min: 0, max: 1, step: 0.001 },
+    far: {value: 100}
   });
 
   let step = 0;
@@ -23,6 +26,7 @@ function Scene() {
   useFrame((_, delta) => {
     boxRef.current.rotation.x += 1 * delta;
     boxRef.current.rotation.y += 1 * delta;
+    shadowRef.current?.updateProjectionMatrix();
 
     step += speed;
     sphereRef.current.position.y = 10 * Math.abs(Math.sin(step));
@@ -41,7 +45,7 @@ function Scene() {
 
       <mesh receiveShadow rotation={[-0.5 * Math.PI, 0, 0]}>
         <planeGeometry args={[30, 30]} />
-        <meshStandardMaterial color="lightgray" side={THREE.DoubleSide} />
+        <meshStandardMaterial color="#ffffff" side={THREE.DoubleSide} />
       </mesh>
 
       <gridHelper args={[30]} />
@@ -51,14 +55,25 @@ function Scene() {
         <meshStandardMaterial color={sphereColor} wireframe={wireframe} />
       </mesh>
 
-      <ambientLight color={0x333333} intensity={0.3}/>
+      <ambientLight color={"#333333"} />
+
       <directionalLight
-      castShadow
+        castShadow
         ref={dirLightRef}
         color={0xffffff}
-        intensity={0.8}
+        intensity={1}
         position={[-30, 50, 0]}
-      />
+      >
+        <orthographicCamera
+          ref={shadowRef}
+          attach="shadow-camera"
+          left={-5}
+          right={5}
+          top={5}
+          bottom={-12}
+          far={far}
+        />
+      </directionalLight>
     </>
   );
 }
@@ -66,7 +81,7 @@ function Scene() {
 const HeroCanvas = () => {
   return (
     <Canvas
-    shadows
+      shadows
       camera={{
         fov: 75,
         near: 0.1,
