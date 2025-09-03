@@ -12,8 +12,8 @@ function Scene() {
   const spinRef = useRef();   // parent: follows carousel spin
   const tiltRef = useRef();   // child: mouse tilt
   const mouseX = useRef(0);
+  const initialized = useRef(false);
 
-  // mouse tracking for gentle tilt
   useEffect(() => {
     const onMove = (e) => {
       mouseX.current = (e.clientX / window.innerWidth) * 2 - 1;
@@ -22,11 +22,10 @@ function Scene() {
     return () => window.removeEventListener("mousemove", onMove);
   }, []);
 
-  // map ScrollTrigger progress -> rotation.y
   useEffect(() => {
     if (!spinRef.current) return;
 
-    // smooth setter for rotation.y
+    const spinsPerPanel = 1;
     const quickY = gsap.quickTo(spinRef.current.rotation, "y", {
       duration: 0.5,
       ease: "power2.out",
@@ -34,21 +33,26 @@ function Scene() {
     });
 
     const onProgress = (e) => {
-      const { progress, panels } = e.detail; // 0..1, total panel count
-      const spinsPerPanel = 1;               // change to 0.5, 2, etc. if you want
+      const { progress, panels } = e.detail;
       const targetY = progress * (panels - 1) * spinsPerPanel * Math.PI * 2;
-      quickY(targetY);
+
+      if (!initialized.current) {
+        // First sync: set instantly (no tween) so there’s no “make-up” spin
+        spinRef.current.rotation.y = targetY;
+        initialized.current = true;
+      } else {
+        quickY(targetY);
+      }
     };
 
     window.addEventListener("carousel:progress", onProgress);
     return () => window.removeEventListener("carousel:progress", onProgress);
   }, []);
 
-  // keep the subtle mouse tilt on the child
   useFrame(() => {
     if (!tiltRef.current) return;
-    let targetY = -mouseX.current * Math.PI;                 // flip sign if desired
-    targetY = THREE.MathUtils.clamp(targetY, -Math.PI/6, Math.PI/18);
+    let targetY = -mouseX.current * Math.PI;
+    targetY = THREE.MathUtils.clamp(targetY, -Math.PI / 6, Math.PI / 18);
     tiltRef.current.rotation.y = THREE.MathUtils.lerp(tiltRef.current.rotation.y, targetY, 0.08);
     tiltRef.current.rotation.x = 0;
   });
@@ -57,10 +61,7 @@ function Scene() {
     <>
       <ambientLight intensity={0.5} />
       <directionalLight position={[5, 5, 5]} intensity={1} />
-
-      {/* parent tracks carousel spin */}
       <group ref={spinRef}>
-        {/* child keeps mouse tilt */}
         <Center ref={tiltRef}>
           <primitive
             object={ballerina}
@@ -74,6 +75,14 @@ function Scene() {
 }
 
 export default function App() {
+  // Belt & suspenders: also force top on mount
+  useEffect(() => {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <Canvas camera={{ position: [-30, 0, 5], fov: 60 }}>
       <Scene />

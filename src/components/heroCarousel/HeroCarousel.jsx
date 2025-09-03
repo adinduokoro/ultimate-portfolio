@@ -11,6 +11,12 @@ export default function HeroCarousel() {
   const trackRef = useRef(null);
 
   useGSAP(() => {
+    // Always start at the top on reload
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+    window.scrollTo(0, 0);
+
     const container = containerRef.current;
     const track = trackRef.current;
     const panels = gsap.utils.toArray(":scope > section", track);
@@ -24,23 +30,42 @@ export default function HeroCarousel() {
         trigger: container,
         pin: true,
         scrub: 1,
+        anticipatePin: 1,
         // markers: true,
         end: () => "+=" + (track.scrollWidth - container.clientWidth),
+
+        // Ensure we begin from progress 0 visually
+        onRefreshInit: () => {
+          window.scrollTo(0, 0);
+          window.dispatchEvent(
+            new CustomEvent("carousel:progress", {
+              detail: { progress: 0, panels: count, velocity: 0 }
+            })
+          );
+        },
+
         snap: {
           snapTo: 1 / (count - 1),
           duration: 0.5,
           ease: "power1.out",
         },
+
         onUpdate: (self) => {
-          // broadcast live progress + panel count (for mapping to spins)
           window.dispatchEvent(
             new CustomEvent("carousel:progress", {
-              detail: { progress: self.progress, panels: count, velocity: self.getVelocity() }
+              detail: {
+                progress: self.progress,
+                panels: count,
+                velocity: self.getVelocity()
+              }
             })
           );
         },
       },
     });
+
+    // Recompute after forcing top
+    ScrollTrigger.refresh();
   }, []);
 
   return (
