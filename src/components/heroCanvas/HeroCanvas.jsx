@@ -1,110 +1,63 @@
-import React, { useRef } from "react";
+// App.jsx
+import React, { useRef, useEffect } from "react";
+import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import { Center, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, useHelper, useTexture } from "@react-three/drei";
-import { DirectionalLightHelper, CameraHelper } from "three";
-import { useControls } from "leva";
-
+import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
 
 function Scene() {
-  const boxRef = useRef();
-  const sphereRef = useRef();
-  const dirLightRef = useRef();
-  const shadowRef = useRef();
+  const ballerina = useLoader(OBJLoader, "/models/Ballerina.obj");
+  const centerRef = useRef();
+  const mouseX = useRef(0); // -1..1
 
-  const stars = useTexture("/texture/stars.jpg");
-  stars.colorSpace = THREE.SRGBColorSpace;
-  stars.mapping = THREE.EquirectangularReflectionMapping;
+  useEffect(() => {
+    const onMove = (e) => {
+      mouseX.current = (e.clientX / window.innerWidth) * 2 - 1; // normalize to -1..1
+    };
+    window.addEventListener("mousemove", onMove);
+    return () => window.removeEventListener("mousemove", onMove);
+  }, []);
 
-  useHelper(dirLightRef, DirectionalLightHelper, 5, "white");
-  useHelper(shadowRef, CameraHelper);
+  useFrame(() => {
+    if (!centerRef.current) return;
 
-  const { sphereColor, wireframe, speed, far } = useControls({
-    sphereColor: { value: "#ffea00" },
-    wireframe: { value: false },
-    speed: { value: 0.01, min: 0, max: 1, step: 0.001 },
-    far: { value: 100 }
-  });
+    // Flip direction by negating the multiplier
+    let targetY = -mouseX.current * Math.PI;
 
-  let step = 0;
+    const minY = -Math.PI / 6; // -30 degrees
+    const maxY = Math.PI / 18; // +10 degrees
+    targetY = THREE.MathUtils.clamp(targetY, minY, maxY);
 
-  useFrame((_, delta) => {
-    boxRef.current.rotation.x += 1 * delta;
-    boxRef.current.rotation.y += 1 * delta;
-    shadowRef.current?.updateProjectionMatrix();
+    // Smooth easing toward target
+    centerRef.current.rotation.y = THREE.MathUtils.lerp(
+      centerRef.current.rotation.y,
+      targetY,
+      0.08
+    );
 
-    step += speed;
-    sphereRef.current.position.y = 10 * Math.abs(Math.sin(step));
+    // Lock X so it doesn’t tilt
+    centerRef.current.rotation.x = 0;
   });
 
   return (
     <>
-      {/* ✅ apply scene background */}
-      <primitive attach="background" object={stars} />
-
-      <axesHelper args={[5]} />
-
-      <mesh ref={boxRef} rotation={[5, 5, 0]}>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshBasicMaterial color="#00ff00" />
-      </mesh>
-
-      <OrbitControls />
-
-      <mesh receiveShadow rotation={[-0.5 * Math.PI, 0, 0]}>
-        <planeGeometry args={[30, 30]} />
-        <meshStandardMaterial color="#ffffff" side={THREE.DoubleSide} />
-      </mesh>
-
-      <gridHelper args={[30]} />
-
-      <mesh castShadow ref={sphereRef} position={[-10, 10, 0]}>
-        <sphereGeometry args={[4, 30, 30]} />
-        <meshStandardMaterial color={sphereColor} wireframe={wireframe} />
-      </mesh>
-
-      <ambientLight color={"#333333"} />
-
-      <directionalLight
-        castShadow
-        ref={dirLightRef}
-        color={0xffffff}
-        intensity={1}
-        position={[-30, 50, 0]}
-      >
-        <orthographicCamera
-          ref={shadowRef}
-          attach="shadow-camera"
-          left={-5}
-          right={5}
-          top={5}
-          bottom={-12}
-          far={far}
+      <ambientLight intensity={0.5} />
+      <directionalLight position={[5, 5, 5]} intensity={1} />
+      <Center ref={centerRef}>
+        <primitive
+          object={ballerina}
+          scale={0.11}
+          rotation={[-Math.PI / 2, 0, -Math.PI / 2]} // base pose
         />
-      </directionalLight>
+      </Center>
     </>
   );
 }
 
-const HeroCanvas = () => {
+export default function App() {
   return (
-    <Canvas
-      shadows
-      camera={{
-        fov: 75,
-        near: 0.1,
-        far: 1000,
-        position: [-10, 30, 30],
-      }}
-      style={{
-        width: "100vw",
-        height: "100vh",
-        background: "#000",
-      }}
-    >
+    <Canvas camera={{ position: [-30, 0, 5], fov: 60 }}>
       <Scene />
     </Canvas>
   );
-};
-
-export default HeroCanvas;
+}
